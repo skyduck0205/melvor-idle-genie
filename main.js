@@ -1,6 +1,6 @@
-console.log("-- init --");
+console.log('-- init --');
 
-const panel = $("<div>", { id: "auto-panel" }).appendTo("body");
+const panel = $('<div>', { id: 'auto-panel' }).appendTo('body');
 
 class MiTimer {
   constructor(options) {
@@ -12,9 +12,10 @@ class MiTimer {
   }
 
   init = () => {
-    $(`<button>${this.label("off")}</button>`, {
-      id: this.name
-    })
+    $(`<button>${this.label('off')}</button>`)
+      .attr({
+        id: this.name,
+      })
       .click(() => {
         console.log(`onclick ${this.name}`);
         if (!this.timerId) this.start();
@@ -40,7 +41,7 @@ class MiTimer {
       return;
     }
 
-    $(`#${this.name}`).html(this.label("on"));
+    $(`#${this.name}`).text(this.label('on'));
 
     this.tryAction();
     this.timerId = setInterval(() => {
@@ -51,7 +52,7 @@ class MiTimer {
   end = () => {
     console.log(`end ${this.name}`);
 
-    $(`#${this.name}`).html(this.label("off"));
+    $(`#${this.name}`).text(this.label('off'));
 
     clearInterval(this.timerId);
     this.timerId = null;
@@ -60,16 +61,49 @@ class MiTimer {
 
 const actions = {
   click: (target) => {
-    console.log("action click", target);
+    console.log('action click', target);
     $(target).click();
-  }
+  },
 };
 
 const timers = [
   new MiTimer({
-    name: "點燃篝火",
+    name: 'auto篝火',
     interval: 5000,
-    action: () => actions.click("#firemaking-bonfire-button")
-  })
+    action: function () {
+      actions.click('#firemaking-bonfire-button');
+    },
+  }),
+  new MiTimer({
+    name: 'auto戰鬥',
+    interval: 2000,
+    action: function () {
+      // pick item
+      const n = +$('#combat-loot-text')
+        .text()
+        .replace(/\D+(\d+) \/.*/, '$1');
+      if (n > 90) {
+        console.log('pick items:', n);
+        $('#combat-btn-loot-all').click();
+      }
+      // eat
+      const cur = +$('#combat-player-hitpoints-current').text();
+      const max = +$('#combat-player-hitpoints-max').text();
+      const food = +$('#combat-food-container .combat-food + span')
+        .first()
+        .text()
+        .replace(' HP', '');
+      console.log('lost:', max - cur, 'food:', food);
+      if (Number.isNaN(food)) {
+        console.log('food empty, escape');
+        $('#combat-btn-run').click();
+        return this.end();
+      }
+      if (max - cur > food) {
+        console.log('eat:+', food);
+        $('#combat-food-container button').first().click();
+      }
+    },
+  }),
 ];
 timers.forEach((timer) => timer.init());
